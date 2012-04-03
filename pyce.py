@@ -4,7 +4,7 @@ import sys
 import json
 import urllib2
 
-def makequeryurl(word):
+def queryurl(word):
     baseurl = 'http://dict.qq.com/dict?q='
     return baseurl + word
 
@@ -13,23 +13,37 @@ def getpage(url):
     page = urllib2.urlopen(request)
     return page
 
-def localdict(data):
+def local_dict(data):
     for local in data['local']:
         for des in local['des']:
             if type(des) is dict:
-                print des['p'] + ' ' + des['d']
+                print(des['p'] + ' ' + des['d'])
             else:
-                print des
+                print(des)
 
-if len(sys.argv) < 2:
-    print 'Error, please type word.'
-page = getpage(makequeryurl(sys.argv[1]))
-if page.code is 200:
+def get_data(page):
     data = page.read()
     data = json.loads(data)
+    return data
+
+def net_dict(data):
+    print('Local dict not this word, but network dict had.')
+
+def main():
+    page = getpage(queryurl(sys.argv[1]))
+    if page.code is not 200:
+        raise RuntimeError('Network error.')
+    data = get_data(page)
     if 'err' in data:
-        print 'Not Found.'
+        print(data['err'])
     elif 'local' in data:
-        localdict(data)
+        local_dict(data)
+    elif 'netdes' in data:
+        net_dict(data)
     else:
-        print 'Local dict have not this word, but net dict had.'
+        raise RuntimeError('Unknown error in load dict data.')
+
+if __name__ == '__main__':
+    if len(sys.argv) is not 2:
+        raise ValueError('Please type one word.')
+    main()
